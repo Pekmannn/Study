@@ -1,4 +1,4 @@
-name: Fetch Fireflies Transcripts
+name: Fetch_Fireflies_Transcripts
 
 on:
   schedule:
