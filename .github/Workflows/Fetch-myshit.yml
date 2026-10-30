@@ -1,12 +1,9 @@
-הנה קוד ה-YAML המלא והמדויק עבור ה-GitHub Action שמושך את ההקלטות מ-Fireflies ומעדכן את קובץ הנתונים.
-ע태ק את הקוד הזה לתוך קובץ חדש בנתיב:
-.github/workflows/fetch-fireflies.yml
 name: Fetch Fireflies Transcripts
 
 on:
   schedule:
-    - cron: '0 6 * * *' # רץ כל יום ב-06:00 בבוקר
-  workflow_dispatch: # מאפשר הפעלה ידנית מתי שתרצה
+    - cron: '0 6 * * *'
+  workflow_dispatch:
 
 jobs:
   fetch-data:
@@ -29,4 +26,3 @@ jobs:
           git config --global user.email "action@github.com"
           git add ./data/transcripts.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update transcripts" && git push)
-
