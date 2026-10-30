@@ -1,4 +1,3 @@
-[index.html](https://github.com/user-attachments/files/34169221/index.html)
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -38,6 +37,11 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);b
 nav button{flex:1;background:none;border:0;color:var(--mut);font-size:12px;padding:5px;font-family:inherit;cursor:pointer}
 nav button span{display:block;font-size:21px}
 nav .on{color:var(--ac);font-weight:800}
+
+/* עיצוב כרטיסיות Fireflies */
+.ff-item{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;background:var(--bg)}
+.ff-item h4{margin:0 0 6px 0;font-size:15px;color:var(--ac)}
+.ff-item audio{width:100%;margin:8px 0}
 </style>
 </head>
 <body>
@@ -76,12 +80,45 @@ async function doTr(i){var f=i.files[0];if(!f)return;
  st('מתמלל… זה יכול לקחת כמה דקות.');
  try{var t=await gem([{inlineData:{mimeType:mt,data:await b64(f)}},{text:'תמלל בעברית את ההקלטה במלואה, מילה במילה. החזר רק את הטקסט המתומלל בפסקאות, בלי הקדמות ובלי סימני markdown. אל תסכם ואל תתייג דוברים. אם קטע לא ברור, כתוב [לא ברור].'}],32768);
   addN(f.name,t)}catch(e){st(e.message||'התמלול נכשל.')}}
+
+/* טעינת הקלטות מ-Fireflies */
+function loadFireflies(){
+  var box = $('ff-list');
+  if(!box) return;
+  box.innerHTML = '<div class="mut">טוען הקלטות מ-Fireflies...</div>';
+  fetch('./data/transcripts.json')
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      var transcripts = data && data.data && data.data.transcripts;
+      if(!transcripts || transcripts.length === 0){
+        box.innerHTML = '<div class="mut">אין הקלטות זמינות ב-Fireflies.</div>';
+        return;
+      }
+      var html = '';
+      transcripts.forEach(function(item){
+        var dateStr = item.date ? new Date(parseInt(item.date)).toLocaleDateString('he-IL') : '';
+        html += '<div class="ff-item">'
+             + '<h4>' + esc(item.title || 'שיעור ללא כותרת') + '</h4>'
+             + '<div class="mut" style="font-size:12px">תאריך: ' + dateStr + '</div>'
+             + (item.audio_url ? '<audio controls src="' + item.audio_url + '"></audio>' : '')
+             + '<div style="font-size:13px;margin-top:6px"><b>סיכום:</b> ' + esc(item.summary && item.summary.overview ? item.summary.overview : 'אין סיכום') + '</div>'
+             + '</div>';
+      });
+      box.innerHTML = html;
+    })
+    .catch(function(err){
+      box.innerHTML = '<div class="mut">טרם נוצר קובץ הקלטות. وדא שרובוט ה-GitHub Action הופעל לפחות פעם אחת.</div>';
+    });
+}
+
 function vC(){var c=C(),h='<div class="card"><h3>קורס חדש</h3><div class="row"><input id="cn" placeholder="למשל: סטטיסטיקה 1"><button class="b" style="flex:0 0 84px" onclick="add()">הוספה</button></div></div>';
  if(S.cs.length)h+='<div class="card"><h3>הקורסים שלי</h3><div class="chips">'+S.cs.map(function(x){return'<button class="chip'+(x.id===S.cur?' on':'')+'" onclick="sel('+x.id+')">'+esc(x.name)+'</button>'}).join('')+'</div></div>';
  if(c)h+='<div class="card"><h3>חומר הלימוד: '+esc(c.name)+'</h3><textarea id="nt" rows="12" placeholder="הדבק סיכומים, שקפים או תמלולים, או העלה קובץ" oninput="C().notes=this.value;save()">'+esc(c.notes)+'</textarea><div class="mut" style="margin:8px 0">עד כ-60,000 תווים נשלחים לעיבוד (בערך 70 דקות של הקלטה).</div>'
  +'<div class="row" style="margin-bottom:8px"><label class="b s" style="margin:0;display:flex;align-items:center;justify-content:center;color:var(--tx);font-size:16px">🎙️ תמלול הקלטה<input type="file" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac" onchange="doTr(this)" style="display:none"></label><label class="b s" style="margin:0;display:flex;align-items:center;justify-content:center;color:var(--tx);font-size:16px">📄 העלאת טקסט<input type="file" accept=".txt,.srt,.vtt,.md,text/plain" onchange="loadT(this)" style="display:none"></label></div><div id="ms" class="mut" style="margin-bottom:8px"></div>'
- +'<button class="b s" style="width:100%" onclick="del('+c.id+')">'+(dcf===c.id?'לחץ שוב למחיקה':'מחיקת הקורס')+'</button></div>';
+ +'<button class="b s" style="width:100%" onclick="del('+c.id+')">'+(dcf===c.id?'לחץ שוב למחיקה':'מחיקת הקורס')+'</button></div>'
+ +'<div class="card"><h3>🔥 הקלטות מ-Fireflies.ai</h3><button class="b s" style="width:100%;margin-bottom:10px" onclick="loadFireflies()">רענן / טען הקלטות</button><div id="ff-list"></div></div>';
  return h}
+
 function vS(){var c=C(),e=need();if(e)return e;
  return'<div class="card"><h3>סיכום: '+esc(c.name)+'</h3><label>סגנון</label><select id="ss" style="margin-bottom:10px"><option>סיכום קצר: נקודות עיקריות</option><option>סיכום מפורט לפי נושאים</option><option>כרטיסיות שאלה ותשובה</option><option>מושגים והגדרות</option></select><button class="b" style="width:100%" onclick="doS()">סכם</button></div><div class="card" id="so">'+(c.sum?'<div style="white-space:pre-wrap">'+esc(c.sum)+'</div>':'<div class="mut">הסיכום יופיע כאן וישמר בקורס.</div>')+'</div>'}
 function doS(){var c=C(),st=$('ss').value;
@@ -124,7 +161,9 @@ function render(){var c=C();
  h+=({c:vC,s:vS,q:vQ,w:vW,g:vG})[tab]();
  $('app').innerHTML=h;
  var T=[['c','📚','קורסים'],['s','📝','סיכום'],['q','🎯','מבחן'],['w','✍️','כתיבה'],['g','⚙️','הגדרות']];
- $('nav').innerHTML=T.map(function(t){return'<button class="'+(tab===t[0]?'on':'')+'" onclick="go(\''+t[0]+'\')"><span>'+t[1]+'</span>'+t[2]+'</button>'}).join('')}
+ $('nav').innerHTML=T.map(function(t){return'<button class="'+(tab===t[0]?'on':'')+'" onclick="go(\''+t[0]+'\')"><span>'+t[1]+'</span>'+t[2]+'</button>'}).join('')
+ if(tab==='c' && c) { loadFireflies(); }
+}
 function go(t){tab=t;render();window.scrollTo(0,0)}
 render();
 </script>
