@@ -1,0 +1,29 @@
+name: Sync Fireflies Transcripts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *' # רץ אוטומטית כל שעה
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Fireflies Transcripts
+        run: |
+          mkdir -p data
+          curl -X POST https://api.fireflies.ai/graphql \
+            -H "Authorization: Bearer ${{ secrets.FIREFLIES_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "query { transcripts(limit: 10) { id title date audio_url summary { overview } } }"}' \
+            > data/transcripts.json
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          git add data/transcripts.json
+          git diff --quiet && git diff --cached --quiet || (git commit -m "Update Fireflies transcripts" && git push)
